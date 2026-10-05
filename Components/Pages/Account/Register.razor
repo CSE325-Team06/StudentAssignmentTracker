@@ -1,0 +1,115 @@
+@page "/account/register"
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@using Microsoft.AspNetCore.Components
+@using StudentAssignmentTracker.Interfaces
+@using StudentAssignmentTracker.ViewModels
+@using StudentAssignmentTracker.Services
+@inject IAuthService AuthService
+
+<PageTitle>Register</PageTitle>
+
+<div class="container py-4">
+	<div class="row justify-content-center">
+		<div class="col-12 col-md-8 col-lg-6">
+			<div class="card shadow-sm">
+				<div class="card-body p-4">
+					<h1 class="h3 mb-4">Create an account</h1>
+
+					@if (RegistrationComplete)
+					{
+						<div class="alert alert-success" role="status">
+							Your account has been created.
+						</div>
+					}
+					else
+					{
+						<EditForm Model="Input!" OnValidSubmit="RegisterAsync" FormName="register">
+							<DataAnnotationsValidator />
+							<ValidationSummary class="alert alert-danger" />
+
+							@if (!string.IsNullOrEmpty(ErrorMessage))
+							{
+								<div class="alert alert-danger" role="alert">@ErrorMessage</div>
+							}
+
+							<div class="row g-3">
+								<div class="col-sm-6">
+									<label for="firstName" class="form-label">First name</label>
+									<InputText id="firstName" class="form-control" @bind-Value="Input!.FirstName" autocomplete="given-name" />
+									<ValidationMessage For="@(() => Input!.FirstName)" />
+								</div>
+
+								<div class="col-sm-6">
+									<label for="lastName" class="form-label">Last name</label>
+									<InputText id="lastName" class="form-control" @bind-Value="Input!.LastName" autocomplete="family-name" />
+									<ValidationMessage For="@(() => Input!.LastName)" />
+								</div>
+
+								<div class="col-12">
+									<label for="email" class="form-label">Email</label>
+									<InputText id="email" type="email" class="form-control" @bind-Value="Input!.Email" autocomplete="email" />
+									<ValidationMessage For="@(() => Input!.Email)" />
+								</div>
+
+								<div class="col-12">
+									<label for="password" class="form-label">Password</label>
+									<InputText id="password" type="password" class="form-control" @bind-Value="Input!.Password" autocomplete="new-password" />
+									<ValidationMessage For="@(() => Input!.Password)" />
+								</div>
+
+								<div class="col-12">
+									<label for="confirmPassword" class="form-label">Confirm password</label>
+									<InputText id="confirmPassword" type="password" class="form-control" @bind-Value="Input!.ConfirmPassword" autocomplete="new-password" />
+									<ValidationMessage For="@(() => Input!.ConfirmPassword)" />
+								</div>
+
+								<div class="col-12">
+									<button type="submit" class="btn btn-primary w-100" disabled="@IsSubmitting">
+										@(IsSubmitting ? "Creating account..." : "Create account")
+									</button>
+								</div>
+							</div>
+						</EditForm>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	[SupplyParameterFromForm]
+	private RegisterViewModel? Input { get; set; }
+	private string? ErrorMessage { get; set; }
+	private bool IsSubmitting { get; set; }
+	private bool RegistrationComplete { get; set; }
+
+	protected override void OnInitialized()
+	{
+		Input ??= new();
+	}
+
+	private async Task RegisterAsync()
+	{
+		var input = Input!;
+		ErrorMessage = null;
+		IsSubmitting = true;
+
+		try
+		{
+			var result = await AuthService.RegisterAsync(input);
+			if (result.Succeeded)
+			{
+				RegistrationComplete = true;
+				return;
+			}
+
+			ErrorMessage = string.Join(" ", result.Errors.Select(error => error.Description));
+		}
+		finally
+		{
+			IsSubmitting = false;
+		}
+	}
+
+}

@@ -1,163 +1,174 @@
 @page "/assignments/add"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using StudentAssignmentTracker.Data
+@using StudentAssignmentTracker.Enums
+@using StudentAssignmentTracker.Models
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 
 <PageTitle>Add Assignment - Student Assignment Tracker</PageTitle>
 
 <div class="add-assignment-page">
-
     <div class="page-header">
         <div>
             <h1>Add Assignment</h1>
             <p>Add a new assignment and keep track of its deadline.</p>
         </div>
-
-        <a href="/assignments" class="back-button">
-            ← Back to Assignments
-        </a>
+        <a href="/assignments" class="back-button">← Back to Assignments</a>
     </div>
 
-    <div class="assignment-form-card">
+    @if (courses.Count == 0)
+    {
+        <div class="alert alert-info">
+            Add a course before creating an assignment. <a href="/courses/add">Add Course</a>
+        </div>
+    }
+    else
+    {
+        <div class="assignment-form-card">
+            <EditForm Model="@assignment" OnValidSubmit="HandleAddAssignment" FormName="AddAssignmentForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
 
-        <EditForm Model="@assignment" OnValidSubmit="HandleAddAssignment">
-            <DataAnnotationsValidator />
-
-            <div class="form-group">
-                <label for="title">Assignment Title</label>
-
-                <InputText id="title"
-                           @bind-Value="assignment.Title"
-                           placeholder="e.g. Database Design Project"
-                           style="width: 100%; height: 48px; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #172554; font-family: inherit; font-size: 14px; outline: none;" />
-
-                <ValidationMessage For="@(() => assignment.Title)" />
-            </div>
-
-            <div class="form-row">
-
-                <div class="form-group">
-                    <label for="course">Course</label>
-
-                    <select id="course"
-                            @bind="assignment.Course"
-                            class="form-select">
-                        <option value="">Select a course</option>
-                        <option value="CSE 325">CSE 325 - Software Development</option>
-                        <option value="CSE 310">CSE 310 - Mobile Application Development</option>
-                        <option value="CSE 320">CSE 320 - Database Systems</option>
-                    </select>
-
-                    <ValidationMessage For="@(() => assignment.Course)" />
-                </div>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">@errorMessage</div>
+                }
 
                 <div class="form-group">
-                    <label for="dueDate">Due Date</label>
-
-                    <InputDate id="dueDate"
-                               @bind-Value="assignment.DueDate"
-                               class="form-input" />
-
-                    <ValidationMessage For="@(() => assignment.DueDate)" />
+                    <label for="title">Assignment Title</label>
+                    <InputText id="title" @bind-Value="assignment.Title" class="form-control"
+                               placeholder="e.g. Database Design Project" />
+                    <ValidationMessage For="@(() => assignment.Title)" />
                 </div>
 
-            </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="course">Course</label>
+                        <InputSelect id="course" @bind-Value="assignment.CourseId" class="form-select">
+                            <option value="">Select a course</option>
+                            @foreach (var course in courses)
+                            {
+                                <option value="@course.Id">@course.Code - @course.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => assignment.CourseId)" />
+                    </div>
 
-            <div class="form-row">
+                    <div class="form-group">
+                        <label for="dueDate">Due Date</label>
+                        <InputDate id="dueDate" @bind-Value="assignment.DueDate" class="form-control" />
+                        <ValidationMessage For="@(() => assignment.DueDate)" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="priority">Priority</label>
+                        <InputSelect id="priority" @bind-Value="assignment.Priority" class="form-select">
+                            @foreach (var priority in Enum.GetValues<PriorityLevel>())
+                            {
+                                <option value="@priority">@priority</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <InputSelect id="status" @bind-Value="assignment.Status" class="form-select">
+                            <option value="@AssignmentStatus.NotStarted">Not Started</option>
+                            <option value="@AssignmentStatus.InProgress">In Progress</option>
+                            <option value="@AssignmentStatus.Completed">Completed</option>
+                        </InputSelect>
+                    </div>
+                </div>
 
                 <div class="form-group">
-                    <label for="priority">Priority</label>
-
-                    <select id="priority"
-                            @bind="assignment.Priority"
-                            class="form-select">
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                    </select>
+                    <label for="description">Description</label>
+                    <InputTextArea id="description" @bind-Value="assignment.Description" class="form-control"
+                                   placeholder="Enter assignment details..." />
+                    <ValidationMessage For="@(() => assignment.Description)" />
                 </div>
 
-                <div class="form-group">
-                    <label for="status">Status</label>
-
-                    <select id="status"
-                            @bind="assignment.Status"
-                            class="form-select">
-                        <option value="Upcoming">Upcoming</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                    </select>
+                <div class="form-actions">
+                    <a href="/assignments" class="cancel-button">Cancel</a>
+                    <button type="submit" class="submit-button">Add Assignment</button>
                 </div>
-
-            </div>
-
-            <div class="form-group">
-                <label for="description">Description</label>
-
-                <InputTextArea id="description"
-                               @bind-Value="assignment.Description"
-                               placeholder="Enter assignment details..."
-                               style="width: 100%; min-height: 130px; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #172554; font-family: inherit; font-size: 14px; outline: none; resize: vertical;" />
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(successMessage))
-            {
-                <div class="success-message">
-                    @successMessage
-                </div>
-            }
-
-            <div class="form-actions">
-
-                <a href="/assignments" class="cancel-button">
-                    Cancel
-                </a>
-
-                <button type="submit" class="submit-button">
-                    Add Assignment
-                </button>
-
-            </div>
-
-        </EditForm>
-
-    </div>
-
+            </EditForm>
+        </div>
+    }
 </div>
 
 @code {
-
-    private AssignmentModel assignment = new()
+    private List<Course> courses = [];
+    private AssignmentFormModel assignment = new()
     {
         DueDate = DateTime.Today.AddDays(7),
-        Priority = "Medium",
-        Status = "Upcoming"
+        Priority = PriorityLevel.Medium,
+        Status = AssignmentStatus.NotStarted
     };
+    private string? errorMessage;
+    private string userId = string.Empty;
 
-    private string? successMessage;
-
-    private void HandleAddAssignment()
+    protected override async Task OnInitializedAsync()
     {
-        successMessage = "Assignment added successfully!";
-
-        // Database functionality will be connected here.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("The signed-in user has no identifier claim.");
+        courses = await DbContext.Courses
+            .Where(course => course.UserId == userId)
+            .OrderBy(course => course.Name)
+            .ToListAsync();
     }
 
-    private class AssignmentModel
+    private async Task HandleAddAssignment()
     {
-        [System.ComponentModel.DataAnnotations.Required(
-            ErrorMessage = "Assignment title is required.")]
+        var course = courses.SingleOrDefault(item => item.Id == assignment.CourseId);
+        if (course is null)
+        {
+            errorMessage = "Select one of your courses for this assignment.";
+            return;
+        }
+
+        var newAssignment = new Assignment
+        {
+            Title = assignment.Title,
+            Description = assignment.Description,
+            DueDate = assignment.DueDate!.Value,
+            Priority = assignment.Priority,
+            Status = assignment.Status,
+            IsCompleted = assignment.Status == AssignmentStatus.Completed,
+            CourseId = course.Id
+        };
+
+        DbContext.Assignments.Add(newAssignment);
+        await DbContext.SaveChangesAsync();
+        NavigationManager.NavigateTo("/assignments");
+    }
+
+    private sealed class AssignmentFormModel
+    {
+        [Required(ErrorMessage = "Assignment title is required.")]
+        [StringLength(100)]
         public string Title { get; set; } = string.Empty;
 
-        [System.ComponentModel.DataAnnotations.Required(
-            ErrorMessage = "Please select a course.")]
-        public string Course { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Please select a course.")]
+        public int? CourseId { get; set; }
 
-        [System.ComponentModel.DataAnnotations.Required(
-            ErrorMessage = "Due date is required.")]
-        public DateTime DueDate { get; set; }
+        [Required(ErrorMessage = "Due date is required.")]
+        public DateTime? DueDate { get; set; }
 
-        public string Priority { get; set; } = "Medium";
+        public PriorityLevel Priority { get; set; }
 
-        public string Status { get; set; } = "Upcoming";
+        public AssignmentStatus Status { get; set; }
 
+        [StringLength(1000)]
         public string Description { get; set; } = string.Empty;
     }
 }

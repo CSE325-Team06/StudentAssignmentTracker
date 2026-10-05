@@ -1,5 +1,5 @@
-﻿@inherits LayoutComponentBase
-@inject NavigationManager Navigation
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
 
 <div class="page">
 
@@ -9,32 +9,21 @@
 
     <main>
 
-        <div class="top-row px-4">
+        <AuthorizeView>
+            <Authorized Context="auth">
+                <div class="top-row px-4">
+                    <div class="profile-container">
+                        <div class="profile-avatar" aria-hidden="true">
+                            @GetInitial(auth.User.Identity?.Name)
+                        </div>
+                        <div class="profile-info">
+                            <strong>@(auth.User.Identity?.Name ?? "Account")</strong>
+                        </div>
+                    </div>
 
-            <div class="profile-container">
-
-                <div class="profile-avatar">
-                    @if (!string.IsNullOrWhiteSpace(ProfileImage))
-                    {
-                        <img src="@ProfileImage" alt="Elisha's profile" />
-                    }
-                    else
-                    {
-                        <span>ES</span>
-                    }
                 </div>
-
-                <div class="profile-info">
-                    <strong>Elisha Sunday</strong>
-
-                    <button type="button" class="logout-button" @onclick="Logout">
-                        Logout
-                    </button>
-                </div>
-
-            </div>
-
-        </div>
+            </Authorized>
+        </AuthorizeView>
 
         <article class="content px-4">
             @Body
@@ -51,10 +40,6 @@
 </div>
 
 @code {
-    private string? ProfileImage = null;
-
-    private void Logout()
-    {
-        // Authentication/logout functionality will be connected here.
-    }
+    private static string GetInitial(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "?" : name[..1].ToUpperInvariant();
 }

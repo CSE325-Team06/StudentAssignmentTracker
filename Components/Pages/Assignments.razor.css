@@ -144,6 +144,11 @@
     color: #16a34a;
 }
 
+.priority.critical {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
 .assignment-status {
     display: flex;
     align-items: center;
@@ -165,6 +170,16 @@
 .status.completed {
     background: #f0fdf4;
     color: #16a34a;
+}
+
+.status.overdue {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.status.in-progress {
+    background: #fffbeb;
+    color: #d97706;
 }
 
 .assignment-actions {

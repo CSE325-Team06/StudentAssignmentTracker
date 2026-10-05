@@ -1,283 +1,126 @@
-﻿@page "/"
+@page "/"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using StudentAssignmentTracker.Data
+@using StudentAssignmentTracker.Enums
+@using StudentAssignmentTracker.Models
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Dashboard - Student Assignment Tracker</PageTitle>
 
 <div class="dashboard">
-
-    <!-- Dashboard Header -->
     <div class="dashboard-header">
         <div>
-            <h1>Good morning, Elisha!</h1>
-            <p>Here's an overview of your academic work and upcoming assignments.</p>
+            <h1>Dashboard</h1>
+            <p>Here's an overview of your courses and upcoming assignments.</p>
         </div>
     </div>
 
-    <!-- Statistics -->
     <div class="stats-grid">
-
         <div class="stat-card blue">
             <div class="stat-icon">📚</div>
-            <div>
-                <span>Total Courses</span>
-                <strong>3</strong>
-            </div>
+            <div><span>Total Courses</span><strong>@courseCount</strong></div>
         </div>
-
         <div class="stat-card green">
             <div class="stat-icon">✓</div>
-            <div>
-                <span>Total Assignments</span>
-                <strong>5</strong>
-            </div>
+            <div><span>Total Assignments</span><strong>@assignments.Count</strong></div>
         </div>
-
         <div class="stat-card yellow">
             <div class="stat-icon">◷</div>
-            <div>
-                <span>Upcoming Assignments</span>
-                <strong>3</strong>
-            </div>
+            <div><span>Upcoming Assignments</span><strong>@UpcomingAssignments.Count</strong></div>
         </div>
-
         <div class="stat-card purple">
             <div class="stat-icon">✓</div>
-            <div>
-                <span>Completed Assignments</span>
-                <strong>2</strong>
-            </div>
+            <div><span>Completed Assignments</span><strong>@assignments.Count(IsCompleted)</strong></div>
         </div>
-
     </div>
 
-    <!-- Main Dashboard Content -->
     <div class="dashboard-content">
-
-        <!-- Upcoming Assignments -->
         <section class="assignments-card">
-
             <div class="section-header">
                 <h2>Upcoming Assignments</h2>
-
-                <a href="/assignments">
-                    View All →
-                </a>
+                <a href="/assignments">View All →</a>
             </div>
 
-            <div class="assignment-list">
-
-                <div class="assignment-item">
-                    <div class="assignment-info">
-                        <strong>Research Paper</strong>
-                        <span>Computer Science 101</span>
-                    </div>
-
-                    <div class="assignment-date">
-                        <span>Apr 28, 2025</span>
-                    </div>
-
-                    <span class="priority high">
-                        High
-                    </span>
-
-                    <span class="arrow">
-                        ›
-                    </span>
+            @if (UpcomingAssignments.Count == 0)
+            {
+                <p>You have no upcoming assignments. <a href="/assignments/add">Add one</a>.</p>
+            }
+            else
+            {
+                <div class="assignment-list">
+                    @foreach (var assignment in UpcomingAssignments.Take(5))
+                    {
+                        <div class="assignment-item">
+                            <div class="assignment-info">
+                                <strong>@assignment.Title</strong>
+                                <span>@assignment.Course.Code · @assignment.Course.Name</span>
+                            </div>
+                            <div class="assignment-date">
+                                <span>@assignment.DueDate.ToString("MMM d, yyyy")</span>
+                            </div>
+                            <span class="priority @assignment.Priority.ToString().ToLowerInvariant()">
+                                @assignment.Priority
+                            </span>
+                        </div>
+                    }
                 </div>
-
-                <div class="assignment-item">
-                    <div class="assignment-info">
-                        <strong>Math Homework</strong>
-                        <span>Mathematics</span>
-                    </div>
-
-                    <div class="assignment-date">
-                        <span>Apr 30, 2025</span>
-                    </div>
-
-                    <span class="priority medium">
-                        Medium
-                    </span>
-
-                    <span class="arrow">
-                        ›
-                    </span>
-                </div>
-
-                <div class="assignment-item">
-                    <div class="assignment-info">
-                        <strong>Lab Report</strong>
-                        <span>Biology</span>
-                    </div>
-
-                    <div class="assignment-date">
-                        <span>May 2, 2025</span>
-                    </div>
-
-                    <span class="priority low">
-                        Low
-                    </span>
-
-                    <span class="arrow">
-                        ›
-                    </span>
-                </div>
-
-                <div class="assignment-item">
-                    <div class="assignment-info">
-                        <strong>Group Project</strong>
-                        <span>Web Development</span>
-                    </div>
-
-                    <div class="assignment-date">
-                        <span>May 5, 2025</span>
-                    </div>
-
-                    <span class="priority low">
-                        Low
-                    </span>
-
-                    <span class="arrow">
-                        ›
-                    </span>
-                </div>
-
-                <div class="assignment-item">
-                    <div class="assignment-info">
-                        <strong>Final Exam Review</strong>
-                        <span>Computer Science 101</span>
-                    </div>
-
-                    <div class="assignment-date">
-                        <span>May 10, 2025</span>
-                    </div>
-
-                    <span class="priority medium">
-                        Medium
-                    </span>
-
-                    <span class="arrow">
-                        ›
-                    </span>
-                </div>
-
-            </div>
-
+            }
         </section>
 
-        <!-- Right Column -->
         <div class="right-column">
-
-            <!-- Calendar -->
-            <section class="calendar-card">
-
-                <div class="section-header">
-                    <h2>May 2025</h2>
-
-                    <div class="calendar-arrows">
-                        <button type="button">‹</button>
-                        <button type="button">›</button>
-                    </div>
-                </div>
-
-                <div class="calendar-week">
-                    <span>Sun</span>
-                    <span>Mon</span>
-                    <span>Tue</span>
-                    <span>Wed</span>
-                    <span>Thu</span>
-                    <span>Fri</span>
-                    <span>Sat</span>
-                </div>
-
-                <div class="calendar-days">
-
-                    <span class="muted">27</span>
-                    <span class="muted">28</span>
-                    <span class="muted">29</span>
-                    <span class="muted">30</span>
-                    <span>1</span>
-                    <span class="event">2</span>
-                    <span>3</span>
-
-                    <span>4</span>
-                    <span class="event">5</span>
-                    <span>6</span>
-                    <span>7</span>
-                    <span>8</span>
-                    <span class="event">9</span>
-                    <span>10</span>
-
-                    <span>11</span>
-                    <span>12</span>
-                    <span>13</span>
-                    <span>14</span>
-                    <span>15</span>
-                    <span>16</span>
-                    <span>17</span>
-
-                    <span>18</span>
-                    <span>19</span>
-                    <span>20</span>
-                    <span>21</span>
-                    <span>22</span>
-                    <span>23</span>
-                    <span>24</span>
-
-                    <span>25</span>
-                    <span>26</span>
-                    <span>27</span>
-                    <span class="today">28</span>
-                    <span>29</span>
-                    <span>30</span>
-                    <span>31</span>
-
-                </div>
-
-            </section>
-
-            <!-- Quick Actions -->
             <section class="quick-actions">
-
                 <h2>Quick Actions</h2>
-
                 <a href="/courses/add">
                     <span class="action-icon blue-icon">+</span>
                     Add Course
                     <span>›</span>
                 </a>
-
-                <a href="/assignments">
+                <a href="/assignments/add">
                     <span class="action-icon green-icon">+</span>
-                    <span>Add Assignment</span>
+                    Add Assignment
                     <span>›</span>
                 </a>
-
-                <a href="/search">
-                    <span class="action-icon purple-icon">⌕</span>
-                    <span>Search</span>
+                <a href="/calendar">
+                    <span class="action-icon purple-icon">◷</span>
+                    View Calendar
                     <span>›</span>
                 </a>
-
             </section>
-
         </div>
-
     </div>
-
 </div>
 
 @code {
-    private bool showProfileMenu = false;
+    private int courseCount;
+    private List<Assignment> assignments = [];
 
-    private void ToggleProfileMenu()
+    private List<Assignment> UpcomingAssignments => assignments
+        .Where(assignment => !IsCompleted(assignment) && assignment.DueDate.Date >= DateTime.Today)
+        .OrderBy(assignment => assignment.DueDate)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
     {
-        showProfileMenu = !showProfileMenu;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new InvalidOperationException("The signed-in user has no identifier claim.");
+        }
+
+        courseCount = await DbContext.Courses.CountAsync(course => course.UserId == userId);
+        assignments = await DbContext.Assignments
+            .Include(assignment => assignment.Course)
+            .Where(assignment => assignment.Course.UserId == userId)
+            .OrderBy(assignment => assignment.DueDate)
+            .ToListAsync();
     }
 
-    private void Logout()
-    {
-        showProfileMenu = false;
-
-        // Authentication/logout functionality will be connected here.
-    }
+    private static bool IsCompleted(Assignment assignment) =>
+        assignment.IsCompleted || assignment.Status == AssignmentStatus.Completed;
 }

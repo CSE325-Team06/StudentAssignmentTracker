@@ -1,11 +1,14 @@
 @page "/courses/add"
 
 @rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
 @using StudentAssignmentTracker.Models
 @using StudentAssignmentTracker.Data
-@using Microsoft.EntityFrameworkCore
 @inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
 <PageTitle>Add Course - Student Assignment Tracker</PageTitle>
@@ -30,6 +33,7 @@
                   FormName="AddCourseForm">
 
             <DataAnnotationsValidator />
+            <ValidationSummary />
 
             <div class="form-group">
                 <label for="courseName">Course Name</label>
@@ -89,13 +93,18 @@
 @code {
 
     private Course course = new();
-
     private async Task HandleAddCourse()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new InvalidOperationException("The signed-in user has no identifier claim.");
+        }
+
+        course.UserId = userId;
         DbContext.Courses.Add(course);
-
         await DbContext.SaveChangesAsync();
-
         NavigationManager.NavigateTo("/courses");
     }
 }

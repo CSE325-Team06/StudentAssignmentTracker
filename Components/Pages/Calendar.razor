@@ -1,291 +1,153 @@
 @page "/calendar"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using StudentAssignmentTracker.Data
+@using StudentAssignmentTracker.Enums
+@using StudentAssignmentTracker.Models
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Calendar - Student Assignment Tracker</PageTitle>
 
 <div class="calendar-page">
-
     <div class="calendar-header">
-
         <div>
             <h1>Calendar</h1>
             <p>View your assignments and deadlines on your academic calendar.</p>
         </div>
-
-        <button class="today-button" @onclick="GoToToday">
-            Today
-        </button>
-
+        <button type="button" class="today-button" @onclick="GoToToday">Today</button>
     </div>
 
     <div class="calendar-card">
-
         <div class="calendar-navigation">
-
-            <button class="navigation-button" @onclick="PreviousMonth">
-                ←
-            </button>
-
+            <button type="button" class="navigation-button" aria-label="Previous month" @onclick="PreviousMonth">←</button>
             <h2>@CurrentMonth.ToString("MMMM yyyy")</h2>
-
-            <button class="navigation-button" @onclick="NextMonth">
-                →
-            </button>
-
+            <button type="button" class="navigation-button" aria-label="Next month" @onclick="NextMonth">→</button>
         </div>
-
         <div class="calendar-weekdays">
-
             @foreach (var day in WeekDays)
             {
-                <div class="weekday">
-                    @day
-                </div>
+                <div class="weekday">@day</div>
             }
-
         </div>
-
         <div class="calendar-grid">
-
             @foreach (var day in CalendarDays)
             {
                 <button type="button"
-                        class="calendar-day
-                        @(day.Date.Month != CurrentMonth.Month ? "other-month" : "")
-                        @(day.Date == DateTime.Today ? "today" : "")
-                        @(day.Date == SelectedDate ? "selected" : "")"
+                        class="calendar-day @(day.Month != CurrentMonth.Month ? "other-month" : "") @(day.Date == DateTime.Today ? "today" : "") @(day.Date == SelectedDate ? "selected" : "")"
                         @onclick="() => SelectDate(day.Date)">
-
-                    <span class="day-number">
-                        @day.Date.Day
-                    </span>
-
-                    @if (GetAssignments(day.Date).Any())
+                    <span class="day-number">@day.Day</span>
+                    @if (GetAssignments(day).Count > 0)
                     {
                         <div class="day-assignments">
-
-                            @foreach (var assignment in GetAssignments(day.Date))
+                            @foreach (var assignment in GetAssignments(day).Take(2))
                             {
-                                <span class="assignment-dot"
-                                      title="@assignment.Title">
-                                    @assignment.Title
-                                </span>
+                                <span class="assignment-dot" title="@assignment.Title">@assignment.Title</span>
                             }
-
+                            @if (GetAssignments(day).Count > 2)
+                            {
+                                <span class="assignment-dot">+@(GetAssignments(day).Count - 2) more</span>
+                            }
                         </div>
                     }
-
                 </button>
             }
-
         </div>
-
     </div>
 
     <div class="selected-date-card">
-
         <div class="selected-date-header">
             <div>
                 <h2>@SelectedDate.ToString("dddd, MMMM d, yyyy")</h2>
-                <p>Assignments for this date</p>
+                <p>Assignments due on this date</p>
             </div>
         </div>
-
-        @if (GetAssignments(SelectedDate).Any())
+        @if (GetAssignments(SelectedDate).Count > 0)
         {
             <div class="selected-assignment-list">
-
                 @foreach (var assignment in GetAssignments(SelectedDate))
                 {
                     <div class="selected-assignment">
-
-                        <div class="assignment-icon">
-                            📝
-                        </div>
-
+                        <div class="assignment-icon">📝</div>
                         <div class="assignment-details">
-
                             <h3>@assignment.Title</h3>
-
-                            <p>@assignment.Course</p>
-
-                            <span class="priority @assignment.Priority.ToLower()">
-                                @assignment.Priority Priority
-                            </span>
-
+                            <p>@assignment.Course.Code · @assignment.Course.Name</p>
+                            <span class="priority @assignment.Priority.ToString().ToLowerInvariant()">@assignment.Priority Priority</span>
                         </div>
-
-                        <span class="assignment-status @assignment.Status.ToLower().Replace(" ", "-")">
-                            @assignment.Status
+                        <span class="assignment-status @(IsCompleted(assignment) ? "completed" : "upcoming")">
+                            @(IsCompleted(assignment) ? "Completed" : assignment.Status == AssignmentStatus.InProgress ? "In Progress" : "Upcoming")
                         </span>
-
                     </div>
                 }
-
             </div>
         }
         else
         {
             <div class="empty-date">
-
-                <div class="empty-icon">
-                    📅
-                </div>
-
+                <div class="empty-icon">📅</div>
                 <h3>No assignments</h3>
-
-                <p>
-                    There are no assignments scheduled for this date.
-                </p>
-
+                <p>There are no assignments scheduled for this date.</p>
             </div>
         }
-
     </div>
-
 </div>
 
 @code {
-
-    private DateTime CurrentMonth = new DateTime(
-        DateTime.Today.Year,
-        DateTime.Today.Month,
-        1);
-
+    private static readonly string[] WeekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    private DateTime CurrentMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private DateTime SelectedDate = DateTime.Today;
+    private List<DateTime> CalendarDays = [];
+    private List<Assignment> assignments = [];
 
-    private List<CalendarDay> CalendarDays = new();
-
-    private readonly string[] WeekDays =
+    protected override async Task OnInitializedAsync()
     {
-        "Sun",
-        "Mon",
-        "Tue",
-        "Wed",
-        "Thu",
-        "Fri",
-        "Sat"
-    };
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("The signed-in user has no identifier claim.");
 
-    private List<CalendarAssignment> Assignments = new()
-    {
-        new CalendarAssignment
-        {
-            Title = "Connect Four Project",
-            Course = "CSE 325",
-            DueDate = new DateTime(2026, 10, 2),
-            Priority = "High",
-            Status = "Upcoming"
-        },
-
-        new CalendarAssignment
-        {
-            Title = "Database Design Assignment",
-            Course = "CSE 325",
-            DueDate = new DateTime(2026, 10, 6),
-            Priority = "Medium",
-            Status = "Upcoming"
-        },
-
-        new CalendarAssignment
-        {
-            Title = "Web API Assignment",
-            Course = "CSE 325",
-            DueDate = new DateTime(2026, 10, 10),
-            Priority = "Low",
-            Status = "Completed"
-        },
-
-        new CalendarAssignment
-        {
-            Title = "Mobile App Project",
-            Course = "CSE 310",
-            DueDate = new DateTime(2026, 10, 15),
-            Priority = "High",
-            Status = "Upcoming"
-        }
-    };
-
-    protected override void OnInitialized()
-    {
+        assignments = await DbContext.Assignments
+            .Include(assignment => assignment.Course)
+            .Where(assignment => assignment.Course.UserId == userId)
+            .OrderBy(assignment => assignment.DueDate)
+            .ToListAsync();
         GenerateCalendar();
     }
 
     private void GenerateCalendar()
     {
-        CalendarDays.Clear();
-
-        DateTime firstDayOfMonth = new DateTime(
-            CurrentMonth.Year,
-            CurrentMonth.Month,
-            1);
-
-        int daysBeforeMonth =
-            (int)firstDayOfMonth.DayOfWeek;
-
-        DateTime calendarStart =
-            firstDayOfMonth.AddDays(-daysBeforeMonth);
-
-        for (int i = 0; i < 42; i++)
-        {
-            CalendarDays.Add(new CalendarDay
-            {
-                Date = calendarStart.AddDays(i)
-            });
-        }
+        var firstDay = new DateTime(CurrentMonth.Year, CurrentMonth.Month, 1);
+        var start = firstDay.AddDays(-(int)firstDay.DayOfWeek);
+        CalendarDays = Enumerable.Range(0, 42).Select(offset => start.AddDays(offset)).ToList();
     }
 
     private void PreviousMonth()
     {
         CurrentMonth = CurrentMonth.AddMonths(-1);
-
         GenerateCalendar();
     }
 
     private void NextMonth()
     {
         CurrentMonth = CurrentMonth.AddMonths(1);
-
         GenerateCalendar();
     }
 
     private void GoToToday()
     {
-        CurrentMonth = new DateTime(
-            DateTime.Today.Year,
-            DateTime.Today.Month,
-            1);
-
+        CurrentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         SelectedDate = DateTime.Today;
-
         GenerateCalendar();
     }
 
-    private void SelectDate(DateTime date)
-    {
-        SelectedDate = date;
-    }
+    private void SelectDate(DateTime date) => SelectedDate = date;
 
-    private IEnumerable<CalendarAssignment> GetAssignments(DateTime date)
-    {
-        return Assignments.Where(a =>
-            a.DueDate.Date == date.Date);
-    }
+    private List<Assignment> GetAssignments(DateTime date) => assignments
+        .Where(assignment => assignment.DueDate.Date == date.Date)
+        .ToList();
 
-    private class CalendarDay
-    {
-        public DateTime Date { get; set; }
-    }
-
-    private class CalendarAssignment
-    {
-        public string Title { get; set; } = string.Empty;
-
-        public string Course { get; set; } = string.Empty;
-
-        public DateTime DueDate { get; set; }
-
-        public string Priority { get; set; } = "Medium";
-
-        public string Status { get; set; } = "Upcoming";
-    }
+    private static bool IsCompleted(Assignment assignment) =>
+        assignment.IsCompleted || assignment.Status == AssignmentStatus.Completed;
 }

@@ -276,6 +276,11 @@
     color: #16a34a;
 }
 
+.priority.critical {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
 .assignment-status {
     padding: 6px 9px;
     border-radius: 6px;
