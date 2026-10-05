@@ -6,7 +6,7 @@ name: Build and deploy ASP.Net Core app to Azure Web App - student-assignment-tr
 on:
   push:
     branches:
-      - 'azure-deployment-setup'
+      - 'main'
   workflow_dispatch:
 
 jobs:
