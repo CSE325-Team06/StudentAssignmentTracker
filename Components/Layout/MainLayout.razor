@@ -1,19 +1,36 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
 
 <div class="page">
+
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+
+        <AuthorizeView>
+            <Authorized Context="auth">
+                <div class="top-row px-4">
+                    <div class="profile-container">
+                        <div class="profile-avatar" aria-hidden="true">
+                            @GetInitial(auth.User.Identity?.Name)
+                        </div>
+                        <div class="profile-info">
+                            <strong>@(auth.User.Identity?.Name ?? "Account")</strong>
+                        </div>
+                    </div>
+
+                </div>
+            </Authorized>
+        </AuthorizeView>
 
         <article class="content px-4">
             @Body
         </article>
+
     </main>
+
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -21,3 +38,8 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private static string GetInitial(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "?" : name[..1].ToUpperInvariant();
+}

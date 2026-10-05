@@ -1,0 +1,153 @@
+@page "/calendar"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using StudentAssignmentTracker.Data
+@using StudentAssignmentTracker.Enums
+@using StudentAssignmentTracker.Models
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Calendar - Student Assignment Tracker</PageTitle>
+
+<div class="calendar-page">
+    <div class="calendar-header">
+        <div>
+            <h1>Calendar</h1>
+            <p>View your assignments and deadlines on your academic calendar.</p>
+        </div>
+        <button type="button" class="today-button" @onclick="GoToToday">Today</button>
+    </div>
+
+    <div class="calendar-card">
+        <div class="calendar-navigation">
+            <button type="button" class="navigation-button" aria-label="Previous month" @onclick="PreviousMonth">←</button>
+            <h2>@CurrentMonth.ToString("MMMM yyyy")</h2>
+            <button type="button" class="navigation-button" aria-label="Next month" @onclick="NextMonth">→</button>
+        </div>
+        <div class="calendar-weekdays">
+            @foreach (var day in WeekDays)
+            {
+                <div class="weekday">@day</div>
+            }
+        </div>
+        <div class="calendar-grid">
+            @foreach (var day in CalendarDays)
+            {
+                <button type="button"
+                        class="calendar-day @(day.Month != CurrentMonth.Month ? "other-month" : "") @(day.Date == DateTime.Today ? "today" : "") @(day.Date == SelectedDate ? "selected" : "")"
+                        @onclick="() => SelectDate(day.Date)">
+                    <span class="day-number">@day.Day</span>
+                    @if (GetAssignments(day).Count > 0)
+                    {
+                        <div class="day-assignments">
+                            @foreach (var assignment in GetAssignments(day).Take(2))
+                            {
+                                <span class="assignment-dot" title="@assignment.Title">@assignment.Title</span>
+                            }
+                            @if (GetAssignments(day).Count > 2)
+                            {
+                                <span class="assignment-dot">+@(GetAssignments(day).Count - 2) more</span>
+                            }
+                        </div>
+                    }
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="selected-date-card">
+        <div class="selected-date-header">
+            <div>
+                <h2>@SelectedDate.ToString("dddd, MMMM d, yyyy")</h2>
+                <p>Assignments due on this date</p>
+            </div>
+        </div>
+        @if (GetAssignments(SelectedDate).Count > 0)
+        {
+            <div class="selected-assignment-list">
+                @foreach (var assignment in GetAssignments(SelectedDate))
+                {
+                    <div class="selected-assignment">
+                        <div class="assignment-icon">📝</div>
+                        <div class="assignment-details">
+                            <h3>@assignment.Title</h3>
+                            <p>@assignment.Course.Code · @assignment.Course.Name</p>
+                            <span class="priority @assignment.Priority.ToString().ToLowerInvariant()">@assignment.Priority Priority</span>
+                        </div>
+                        <span class="assignment-status @(IsCompleted(assignment) ? "completed" : "upcoming")">
+                            @(IsCompleted(assignment) ? "Completed" : assignment.Status == AssignmentStatus.InProgress ? "In Progress" : "Upcoming")
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-date">
+                <div class="empty-icon">📅</div>
+                <h3>No assignments</h3>
+                <p>There are no assignments scheduled for this date.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly string[] WeekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    private DateTime CurrentMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime SelectedDate = DateTime.Today;
+    private List<DateTime> CalendarDays = [];
+    private List<Assignment> assignments = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("The signed-in user has no identifier claim.");
+
+        assignments = await DbContext.Assignments
+            .Include(assignment => assignment.Course)
+            .Where(assignment => assignment.Course.UserId == userId)
+            .OrderBy(assignment => assignment.DueDate)
+            .ToListAsync();
+        GenerateCalendar();
+    }
+
+    private void GenerateCalendar()
+    {
+        var firstDay = new DateTime(CurrentMonth.Year, CurrentMonth.Month, 1);
+        var start = firstDay.AddDays(-(int)firstDay.DayOfWeek);
+        CalendarDays = Enumerable.Range(0, 42).Select(offset => start.AddDays(offset)).ToList();
+    }
+
+    private void PreviousMonth()
+    {
+        CurrentMonth = CurrentMonth.AddMonths(-1);
+        GenerateCalendar();
+    }
+
+    private void NextMonth()
+    {
+        CurrentMonth = CurrentMonth.AddMonths(1);
+        GenerateCalendar();
+    }
+
+    private void GoToToday()
+    {
+        CurrentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        SelectedDate = DateTime.Today;
+        GenerateCalendar();
+    }
+
+    private void SelectDate(DateTime date) => SelectedDate = date;
+
+    private List<Assignment> GetAssignments(DateTime date) => assignments
+        .Where(assignment => assignment.DueDate.Date == date.Date)
+        .ToList();
+
+    private static bool IsCompleted(Assignment assignment) =>
+        assignment.IsCompleted || assignment.Status == AssignmentStatus.Completed;
+}
