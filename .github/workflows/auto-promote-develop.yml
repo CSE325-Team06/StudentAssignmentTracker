@@ -21,7 +21,7 @@ jobs:
 
       - name: Create Pull Request (if needed)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTO_PR_PAT }}
         run: |
           existing_pr=$(gh pr list --base main --head develop --json number --jq '.[0].number')
 
@@ -40,7 +40,7 @@ jobs:
 
       - name: Enable Auto-Merge
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTO_PR_PAT }}
         run: |
           pr_number=$(gh pr list --base main --head develop --json number --jq '.[0].number')
 
