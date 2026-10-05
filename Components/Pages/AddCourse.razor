@@ -1,0 +1,110 @@
+@page "/courses/add"
+
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using StudentAssignmentTracker.Models
+@using StudentAssignmentTracker.Data
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Add Course - Student Assignment Tracker</PageTitle>
+
+<div class="course-page">
+
+    <div class="page-header">
+        <div>
+            <h1>Add Course</h1>
+            <p>Add a new course to your academic schedule.</p>
+        </div>
+
+        <a href="/" class="back-button">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <div class="course-form-card">
+
+        <EditForm Model="@course"
+                  OnValidSubmit="HandleAddCourse"
+                  FormName="AddCourseForm">
+
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="courseName">Course Name</label>
+
+                <InputText id="courseName"
+                           @bind-Value="course.Name"
+                           placeholder="e.g. Introduction to Computer Science"
+                           style="width: 100%; height: 48px; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #172554; font-family: inherit; font-size: 14px; outline: none;" />
+
+                <ValidationMessage For="@(() => course.Name)" />
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label for="courseCode">Course Code</label>
+
+                    <InputText id="courseCode"
+                               @bind-Value="course.Code"
+                               placeholder="e.g. CSE 101"
+                               style="width: 100%; height: 48px; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #172554; font-family: inherit; font-size: 14px; outline: none;" />
+
+                    <ValidationMessage For="@(() => course.Code)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="semester">Semester</label>
+
+                    <InputText id="semester"
+                               @bind-Value="course.Semester"
+                               placeholder="e.g. Fall 2026"
+                               style="width: 100%; height: 48px; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #172554; font-family: inherit; font-size: 14px; outline: none;" />
+
+                    <ValidationMessage For="@(() => course.Semester)" />
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+
+                <a href="/courses" class="cancel-button">
+                    Cancel
+                </a>
+
+                <button type="submit" class="submit-button">
+                    Add Course
+                </button>
+
+            </div>
+
+        </EditForm>
+
+    </div>
+
+</div>
+
+@code {
+
+    private Course course = new();
+    private async Task HandleAddCourse()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new InvalidOperationException("The signed-in user has no identifier claim.");
+        }
+
+        course.UserId = userId;
+        DbContext.Courses.Add(course);
+        await DbContext.SaveChangesAsync();
+        NavigationManager.NavigateTo("/courses");
+    }
+}
