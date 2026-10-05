@@ -44,6 +44,10 @@ main {
     .top-row ::deep a, .top-row ::deep .btn-link {
         margin-left: 0;
     }
+
+    .logout-button {
+        font-size: 11px;
+    }
 }
 
 @media (min-width: 641px) {
@@ -76,6 +80,104 @@ main {
     }
 }
 
+
+.dashboard-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    min-height: 58px;
+}
+
+.profile-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px 6px 6px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.profile-button:hover {
+    background: #f1f5f9;
+}
+
+.profile-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 75px;
+}
+
+.profile-info strong {
+    color: #172554;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.profile-info span {
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.logout-button { 
+    margin-top: -2px; 
+    padding: 0; 
+    border: none; 
+    background: transparent; 
+    color: #dc2626; 
+    font-family: inherit; 
+    font-size: 12px; 
+    font-weight: 500; 
+    cursor: pointer; 
+    transition: color 0.2s ease; 
+}
+
+.logout-button:hover { 
+    color: #b91c1c; 
+    text-decoration: underline; 
+} 
+
+.logout-button:focus { 
+    outline: none; 
+} 
+
+.logout-button:focus-visible { 
+    outline: 2px solid #2563eb; 
+    outline-offset: 2px; 
+    border-radius: 3px; 
+}
+
 #blazor-error-ui {
     color-scheme: light only;
     background: lightyellow;
@@ -90,9 +192,9 @@ main {
     z-index: 1000;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

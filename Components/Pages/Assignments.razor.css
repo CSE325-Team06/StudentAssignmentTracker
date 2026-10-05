@@ -1,0 +1,267 @@
+.assignments-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 0 60px;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+
+.page-header h1 {
+    margin: 0;
+    color: #172554;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.page-header p {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.add-assignment-button {
+    padding: 11px 18px;
+    border-radius: 8px;
+    background: #2563eb;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.add-assignment-button:hover {
+    background: #1d4ed8;
+}
+
+.assignments-toolbar {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.search-box {
+    flex: 1;
+}
+
+.search-box input,
+.filter-select {
+    width: 100%;
+    height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    color: #334155;
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.filter-select {
+    width: 180px;
+}
+
+.assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.assignment-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+.assignment-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.assignment-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: #eff6ff;
+    font-size: 22px;
+}
+
+.assignment-info h2 {
+    margin: 0 0 5px;
+    color: #172554;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.course-name {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.assignment-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 10px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.priority {
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-weight: 600;
+}
+
+.priority.high {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.priority.medium {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.priority.low {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.priority.critical {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.assignment-status {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.status {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status.upcoming {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.status.completed {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.status.overdue {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.status.in-progress {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.assignment-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-button,
+.delete-button {
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.edit-button {
+    border: 1px solid #dbeafe;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.delete-button {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.edit-button:hover {
+    background: #dbeafe;
+}
+
+.delete-button:hover {
+    background: #fee2e2;
+}
+
+@media (max-width: 800px) {
+    .page-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .assignments-toolbar {
+        flex-direction: column;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+
+    .assignment-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .assignment-status {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 550px) {
+    .assignments-page {
+        padding: 24px 0 40px;
+    }
+
+    .assignment-main {
+        align-items: flex-start;
+    }
+
+    .assignment-meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .assignment-status {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

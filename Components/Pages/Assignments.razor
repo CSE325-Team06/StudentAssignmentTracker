@@ -1,0 +1,163 @@
+@page "/assignments"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using StudentAssignmentTracker.Data
+@using StudentAssignmentTracker.Enums
+@using StudentAssignmentTracker.Models
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Assignments - Student Assignment Tracker</PageTitle>
+
+<div class="assignments-page">
+    <div class="page-header">
+        <div>
+            <h1>My Assignments</h1>
+            <p>Manage your assignments and keep track of upcoming deadlines.</p>
+        </div>
+        <a href="/assignments/add" class="add-assignment-button">+ Add Assignment</a>
+    </div>
+
+    <div class="assignments-toolbar">
+        <div class="search-box">
+            <input type="search" placeholder="Search assignments..." @bind="searchTerm" @bind:event="oninput" />
+        </div>
+        <select class="filter-select" @bind="statusFilter" aria-label="Filter assignments by status">
+            <option value="all">All Assignments</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="overdue">Overdue</option>
+            <option value="completed">Completed</option>
+        </select>
+        <select class="filter-select priority-filter" @bind="priorityFilter" aria-label="Filter assignments by priority">
+            <option value="all">All Priorities</option>
+            @foreach (var priority in Enum.GetValues<PriorityLevel>())
+            {
+                <option value="@priority.ToString().ToLowerInvariant()">@priority Priority</option>
+            }
+        </select>
+    </div>
+
+    @if (FilteredAssignments.Count == 0)
+    {
+        <p>@(assignments.Count == 0 ? "You have no assignments yet." : "No assignments match your filters.")</p>
+    }
+    else
+    {
+        <div class="assignment-list">
+            @foreach (var assignment in FilteredAssignments)
+            {
+                <article class="assignment-card" @key="assignment.Id">
+                    <div class="assignment-main">
+                        <div class="assignment-icon">📝</div>
+                        <div class="assignment-info">
+                            <h2>@assignment.Title</h2>
+                            <p class="course-name">@assignment.Course.Code · @assignment.Course.Name</p>
+                            <div class="assignment-meta">
+                                <span>Due: @assignment.DueDate.ToString("MMMM d, yyyy")</span>
+                                <span class="priority @assignment.Priority.ToString().ToLowerInvariant()">@assignment.Priority Priority</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="assignment-status">
+                        <span class="status @GetStatusClass(assignment)">@GetStatusLabel(assignment)</span>
+                        <div class="assignment-actions">
+                            @if (!IsCompleted(assignment))
+                            {
+                                <button type="button" class="edit-button" @onclick="() => MarkCompleteAsync(assignment)">
+                                    Mark complete
+                                </button>
+                            }
+                            <button type="button" class="delete-button" @onclick="() => DeleteAssignmentAsync(assignment)">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Assignment> assignments = [];
+    private string userId = string.Empty;
+    private string searchTerm = string.Empty;
+    private string statusFilter = "all";
+    private string priorityFilter = "all";
+
+    private List<Assignment> FilteredAssignments => assignments
+        .Where(assignment =>
+            string.IsNullOrWhiteSpace(searchTerm) ||
+            assignment.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            assignment.Course.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            assignment.Course.Code.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+        .Where(assignment => statusFilter switch
+        {
+            "upcoming" => !IsCompleted(assignment) && assignment.DueDate.Date >= DateTime.Today,
+            "overdue" => !IsCompleted(assignment) && assignment.DueDate.Date < DateTime.Today,
+            "completed" => IsCompleted(assignment),
+            _ => true
+        })
+        .Where(assignment =>
+            priorityFilter == "all" ||
+            assignment.Priority.ToString().Equals(priorityFilter, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(assignment => assignment.DueDate)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("The signed-in user has no identifier claim.");
+        await LoadAssignmentsAsync();
+    }
+
+    private async Task LoadAssignmentsAsync()
+    {
+        assignments = await DbContext.Assignments
+            .Include(assignment => assignment.Course)
+            .Where(assignment => assignment.Course.UserId == userId)
+            .OrderBy(assignment => assignment.DueDate)
+            .ToListAsync();
+    }
+
+    private async Task MarkCompleteAsync(Assignment assignment)
+    {
+        assignment.IsCompleted = true;
+        assignment.Status = AssignmentStatus.Completed;
+        await DbContext.SaveChangesAsync();
+    }
+
+    private async Task DeleteAssignmentAsync(Assignment assignment)
+    {
+        DbContext.Assignments.Remove(assignment);
+        await DbContext.SaveChangesAsync();
+        assignments.Remove(assignment);
+    }
+
+    private static bool IsCompleted(Assignment assignment) =>
+        assignment.IsCompleted || assignment.Status == AssignmentStatus.Completed;
+
+    private static string GetStatusLabel(Assignment assignment)
+    {
+        if (IsCompleted(assignment))
+        {
+            return "Completed";
+        }
+
+        if (assignment.DueDate.Date < DateTime.Today)
+        {
+            return "Overdue";
+        }
+
+        return assignment.Status == AssignmentStatus.InProgress ? "In Progress" : "Upcoming";
+    }
+
+    private static string GetStatusClass(Assignment assignment) =>
+        IsCompleted(assignment) ? "completed" :
+        assignment.DueDate.Date < DateTime.Today ? "overdue" :
+        assignment.Status == AssignmentStatus.InProgress ? "in-progress" : "upcoming";
+}
