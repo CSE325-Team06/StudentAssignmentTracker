@@ -113,6 +113,7 @@
             throw new InvalidOperationException("The signed-in user has no identifier claim.");
         }
 
+        // Keep dashboard totals and assignment details scoped to the signed-in user.
         courseCount = await DbContext.Courses.CountAsync(course => course.UserId == userId);
         assignments = await DbContext.Assignments
             .Include(assignment => assignment.Course)

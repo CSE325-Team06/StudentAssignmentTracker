@@ -117,6 +117,7 @@
 
     private async Task LoadAssignmentsAsync()
     {
+        // Restrict the list to assignments whose parent course belongs to this user.
         assignments = await DbContext.Assignments
             .Include(assignment => assignment.Course)
             .Where(assignment => assignment.Course.UserId == userId)
@@ -143,6 +144,7 @@
 
     private static string GetStatusLabel(Assignment assignment)
     {
+        // Completion takes precedence over overdue and in-progress states.
         if (IsCompleted(assignment))
         {
             return "Completed";

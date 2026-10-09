@@ -119,6 +119,7 @@
     private void GenerateCalendar()
     {
         var firstDay = new DateTime(CurrentMonth.Year, CurrentMonth.Month, 1);
+        // Align the first cell to Sunday and render six full weeks for a stable grid.
         var start = firstDay.AddDays(-(int)firstDay.DayOfWeek);
         CalendarDays = Enumerable.Range(0, 42).Select(offset => start.AddDays(offset)).ToList();
     }

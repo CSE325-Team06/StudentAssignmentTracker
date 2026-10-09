@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Identity;
 
 namespace StudentAssignmentTracker.Models;
 
+/// <summary>
+/// An ASP.NET Core Identity account with student profile and course data.
+/// </summary>
 public class ApplicationUser : IdentityUser
 {
     public string FirstName { get; set; } = string.Empty;

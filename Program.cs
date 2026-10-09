@@ -9,7 +9,7 @@ using StudentAssignmentTracker.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Register the Blazor UI, database, and identity services used by the application.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -30,13 +30,14 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
+// Apply pending schema changes before the application begins accepting requests.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 }
 
-// Configure the HTTP request pipeline.
+// Configure production error handling and the middleware required by the UI and authentication.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -50,6 +51,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
+// Require an authorized, antiforgery-protected request before ending the user's session.
 app.MapPost("/account/logout", async (
     HttpContext httpContext,
     IAntiforgery antiforgery,
