@@ -3,6 +3,9 @@ using StudentAssignmentTracker.Enums;
 
 namespace StudentAssignmentTracker.Models;
 
+/// <summary>
+/// Represents a piece of coursework with a due date, status, and grade.
+/// </summary>
 public class Assignment
 {
     public int Id { get; set; }
