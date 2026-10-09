@@ -129,6 +129,7 @@
 
     private async Task HandleAddAssignment()
     {
+        // Only accept courses loaded for this user; do not trust a submitted course ID alone.
         var course = courses.SingleOrDefault(item => item.Id == assignment.CourseId);
         if (course is null)
         {

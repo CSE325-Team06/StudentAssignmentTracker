@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace StudentAssignmentTracker.Models;
 
+/// <summary>
+/// Represents a course owned by one application user and containing assignments.
+/// </summary>
 public class Course
 {
     public int Id { get; set; }

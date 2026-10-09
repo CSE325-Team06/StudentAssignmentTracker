@@ -102,6 +102,7 @@
             throw new InvalidOperationException("The signed-in user has no identifier claim.");
         }
 
+        // Associate the new course with the authenticated user before saving it.
         course.UserId = userId;
         DbContext.Courses.Add(course);
         await DbContext.SaveChangesAsync();

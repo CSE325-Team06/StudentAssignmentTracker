@@ -75,6 +75,7 @@
             throw new InvalidOperationException("The signed-in user has no identifier claim.");
         }
 
+        // Load only this user's courses; assignment counts are shown with each course.
         courses = await DbContext.Courses
             .Where(course => course.UserId == userId)
             .Include(course => course.Assignments)
